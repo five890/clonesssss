@@ -69,8 +69,8 @@ if (strpos($uri, '/account') === 0 || strpos($uri, '/payment') === 0 || strpos($
     exit;
 }
 
-// 3. For everything else, serve the React index.html
-$indexFile = __DIR__ . '/index.html';
+// 3. For everything else, serve the React frontend.html
+$indexFile = __DIR__ . '/frontend.html';
 if (file_exists($indexFile)) {
     readfile($indexFile);
 } else {
