@@ -21,7 +21,7 @@ $router = new Router([
     'debug' => true,
 ]);
 
-// Habilitar CORS para desenvolvimento
+// Habilitar CORS
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -40,13 +40,35 @@ $router->group('/payment', function (Router $router) {
 // Serve static files from storage
 $router->get('/storage/:filename', "StorageController@handle");
 
-// Catch-all route for React SPA
-$router->any('/*:any', function() {
+// Catch-all route for React SPA and Static Files
+$router->any('/*:any', function($any) {
+    $file = __DIR__ . '/' . $any;
+    
+    // Se o arquivo existir fisicamente, serve ele (CSS, JS, Imagens)
+    if (is_file($file)) {
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $mimes = [
+            'css' => 'text/css',
+            'js'  => 'application/javascript',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'svg' => 'image/svg+xml',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+        ];
+        if (isset($mimes[$ext])) {
+            header("Content-Type: " . $mimes[$ext]);
+        }
+        echo file_get_contents($file);
+        return;
+    }
+
+    // Caso contrário, serve o index.html (SPA Routing)
     $indexFile = __DIR__ . '/index.html';
     if (file_exists($indexFile)) {
         echo file_get_contents($indexFile);
     } else {
-        echo "Frontend not found. Please run npm run build in ui folder.";
+        echo "Frontend not found.";
     }
 });
 
