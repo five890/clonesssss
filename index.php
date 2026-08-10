@@ -40,8 +40,21 @@ $router->group('/payment', function (Router $router) {
 // Serve static files from storage
 $router->get('/storage/:filename', "StorageController@handle");
 
+// Função para servir o Frontend
+$serveFrontend = function() {
+    $indexFile = __DIR__ . '/index.html';
+    if (file_exists($indexFile)) {
+        echo file_get_contents($indexFile);
+    } else {
+        echo "Frontend not found.";
+    }
+};
+
+// Rota para a página inicial
+$router->get('/', $serveFrontend);
+
 // Catch-all route for React SPA and Static Files
-$router->any('/*:any', function($any) {
+$router->any('/*:any', function($any) use ($serveFrontend) {
     $file = __DIR__ . '/' . $any;
     
     // Se o arquivo existir fisicamente, serve ele (CSS, JS, Imagens)
@@ -64,12 +77,7 @@ $router->any('/*:any', function($any) {
     }
 
     // Caso contrário, serve o index.html (SPA Routing)
-    $indexFile = __DIR__ . '/index.html';
-    if (file_exists($indexFile)) {
-        echo file_get_contents($indexFile);
-    } else {
-        echo "Frontend not found.";
-    }
+    $serveFrontend();
 });
 
 $router->run();
