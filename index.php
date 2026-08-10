@@ -1,6 +1,5 @@
 <?php
 
-
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/app/configs/db.php';
 
@@ -22,7 +21,12 @@ $router = new Router([
     'debug' => true,
 ]);
 
-// For basic GET URI
+// Habilitar CORS para desenvolvimento
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+// API Routes
 $router->get('/token/validate', "TokenController@validate");
 
 $router->group('/account', function (Router $router) {
@@ -33,7 +37,17 @@ $router->group('/payment', function (Router $router) {
     ($ac = new PaymentController())->main($router);
 });
 
-// For basic GET URI by using a Controller class.
-//$router->post('/account/login', 'AccountController@Login');
-header("Access-Control-Allow-Origin: http://localhost:5173");
+// Serve static files from storage
+$router->get('/storage/:filename', "StorageController@handle");
+
+// Catch-all route for React SPA
+$router->any('/*:any', function() {
+    $indexFile = __DIR__ . '/index.html';
+    if (file_exists($indexFile)) {
+        echo file_get_contents($indexFile);
+    } else {
+        echo "Frontend not found. Please run npm run build in ui folder.";
+    }
+});
+
 $router->run();
