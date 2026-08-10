@@ -40,44 +40,40 @@ $router->group('/payment', function (Router $router) {
 // Serve static files from storage
 $router->get('/storage/:filename', "StorageController@handle");
 
-// Função para servir o Frontend
-$serveFrontend = function() {
-    $indexFile = __DIR__ . '/index.html';
-    if (file_exists($indexFile)) {
-        echo file_get_contents($indexFile);
-    } else {
-        echo "Frontend not found.";
+// Manual handling for assets and frontend to avoid router conflicts
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// 1. Check if it's a physical file in the root or assets folder
+$file = __DIR__ . $uri;
+if ($uri !== '/' && is_file($file)) {
+    $ext = pathinfo($file, PATHINFO_EXTENSION);
+    $mimes = [
+        'css' => 'text/css',
+        'js'  => 'application/javascript',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'svg' => 'image/svg+xml',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+    ];
+    if (isset($mimes[$ext])) {
+        header("Content-Type: " . $mimes[$ext]);
     }
-};
+    readfile($file);
+    exit;
+}
 
-// Rota para a página inicial
-$router->get('/', $serveFrontend);
+// 2. If it's an API route, let the router handle it
+if (strpos($uri, '/account') === 0 || strpos($uri, '/payment') === 0 || strpos($uri, '/token') === 0 || strpos($uri, '/storage') === 0) {
+    $router->run();
+    exit;
+}
 
-// Catch-all route for React SPA and Static Files
-$router->any('/*:any', function($any) use ($serveFrontend) {
-    $file = __DIR__ . '/' . $any;
-    
-    // Se o arquivo existir fisicamente, serve ele (CSS, JS, Imagens)
-    if (is_file($file)) {
-        $ext = pathinfo($file, PATHINFO_EXTENSION);
-        $mimes = [
-            'css' => 'text/css',
-            'js'  => 'application/javascript',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'svg' => 'image/svg+xml',
-            'woff' => 'font/woff',
-            'woff2' => 'font/woff2',
-        ];
-        if (isset($mimes[$ext])) {
-            header("Content-Type: " . $mimes[$ext]);
-        }
-        echo file_get_contents($file);
-        return;
-    }
-
-    // Caso contrário, serve o index.html (SPA Routing)
-    $serveFrontend();
-});
-
-$router->run();
+// 3. For everything else, serve the React index.html
+$indexFile = __DIR__ . '/index.html';
+if (file_exists($indexFile)) {
+    readfile($indexFile);
+} else {
+    echo "Frontend not found.";
+}
+exit;
